@@ -1,0 +1,37 @@
+cabal-version: 3.4
+name: langjamgamejam
+version: 0.1.0.0
+build-type: Simple
+
+library
+  hs-source-dirs: source
+  default-language: GHC2021
+  exposed-modules:
+    AST
+    Parser
+    Propagator
+  build-depends: aeson, containers, base, parsec, primitive, text
+
+test-suite langjamgamejam-tests
+  type: exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs: tests
+  main-is: Driver.hs
+  other-modules: ParserSpec, PropagatorSpec
+  build-depends:
+    aeson,
+    base,
+    ghc-prim,
+    hedgehog,
+    hspec,
+    langjamgamejam,
+    logict,
+    parsec,
+    primitive,
+    scientific,
+    tasty,
+    tasty-hedgehog,
+    tasty-hspec,
+    text,
+    transformers,
+  build-tool-depends: tasty-discover:tasty-discover

@@ -1,0 +1,8 @@
+[tools]
+ghc = "latest"
+cabal = "latest"
+"ubi:mercurytechnologies/ghciwatch" = "latest"
+"ubi:tweag/ormolu" = "0.8.0.2"
+"ubi:ndmitchell/hlint" = "latest"
+just = "latest"
+

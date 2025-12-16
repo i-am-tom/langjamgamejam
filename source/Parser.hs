@@ -1,0 +1,103 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE RecordWildCards #-}
+
+module Parser where
+
+import AST
+import Control.Applicative (asum)
+import Data.Aeson qualified as JSON
+import Data.Functor (($>))
+import Data.Text (Text)
+import Data.Text qualified as Text
+import Text.Parsec
+
+program :: (Stream s m Char) => ParsecT s u m Program
+program = do
+  _pDefinitions <- many (many newline *> definition)
+  pure Program {..}
+
+---
+
+definition :: (Stream s m Char) => ParsecT s u m Definition
+definition = do
+  _dFact <- fact
+  _dFrom <- spaced $ asum [string ":-" *> commaSeparated statement, pure []]
+  _ <- char '.'
+
+  pure Definition {..}
+
+---
+
+statement :: (Stream s m Char) => ParsecT s u m Statement
+statement = spaced do
+  asum [char '!' $> Cut, fmap Search fact]
+
+---
+
+fact :: (Stream s m Char) => ParsecT s u m Fact
+fact = do
+  _fIdentifier <- identifier
+  _fArguments <- parenthesised (commaSeparated argument) <|> pure []
+
+  pure Fact {..}
+
+---
+
+argument :: (Stream s m Char) => ParsecT s u m Argument
+argument = asum [fmap Value (json <* spaces), fmap Placeholder variable]
+  where
+    json :: (Stream s m Char) => ParsecT s u m JSON.Value
+    json = asum [jsonString, jsonNumber, jsonBoolean]
+
+    jsonBoolean :: (Stream s m Char) => ParsecT s u m JSON.Value
+    jsonBoolean =
+      JSON.Bool
+        <$> asum
+          [ string "true" $> True,
+            string "false" $> False
+          ]
+
+    jsonNumber :: (Stream s m Char) => ParsecT s u m JSON.Value
+    jsonNumber = fmap (JSON.Number . read) (many1 digit)
+
+    jsonString :: (Stream s m Char) => ParsecT s u m JSON.Value
+    jsonString = fmap (JSON.String . Text.pack) do
+      between (char '"') (char '"') (many stringChar)
+
+    stringChar :: (Stream s m Char) => ParsecT s u m Char
+    stringChar = (char '\\' *> char '"') <|> satisfy (/= '"')
+
+---
+
+identifier :: (Stream s m Char) => ParsecT s u m Identifier
+identifier = do
+  h <- lower
+  t <- many (alphaNum <|> char '-')
+
+  let name :: Text
+      name = Text.pack (h : t)
+
+  pure (Identifier name)
+
+---
+
+variable :: (Stream s m Char) => ParsecT s u m Variable
+variable = do
+  h <- upper
+  t <- many (alphaNum <|> char '-')
+
+  let name :: Text
+      name = Text.pack (h : t)
+
+  pure (Variable name)
+
+---
+
+parenthesised :: (Stream s m Char) => ParsecT s u m a -> ParsecT s u m a
+parenthesised = between (char '(') (char ')') . spaced
+
+commaSeparated :: (Stream s m Char) => ParsecT s u m a -> ParsecT s u m [a]
+commaSeparated p = sepBy p (spaced (char ','))
+
+spaced :: (Stream s m Char) => ParsecT s u m a -> ParsecT s u m a
+spaced = between spaces spaces
