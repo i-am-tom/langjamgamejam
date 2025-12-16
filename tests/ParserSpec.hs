@@ -4,12 +4,9 @@ module ParserSpec where
 
 import AST
 import Data.Aeson qualified as JSON
-import Data.Functor.Identity
 import Data.Scientific (scientific)
 import Parser
 import Test.Hspec
-import Test.Tasty
-import Test.Tasty.Hspec
 import Text.Parsec
 
 check :: Parsec String () a -> String -> Either ParseError a
@@ -70,11 +67,11 @@ spec_parser = do
         `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0)), Value (JSON.Bool True), Value (JSON.String "bar")])
 
     it "variable placeholder" $
-      check fact "foo(X)" `shouldBe` Right (Fact (Identifier "foo") [Placeholder (Variable "X")])
+      check fact "foo(X)" `shouldBe` Right (Fact (Identifier "foo") [Named (Variable "X")])
 
     it "mixed arguments" $
       check fact "foo(123, X, \"bar\")"
-        `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0)), Placeholder (Variable "X"), Value (JSON.String "bar")])
+        `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0)), Named (Variable "X"), Value (JSON.String "bar")])
 
   describe "argument" $ do
     it "JSON number" $
@@ -93,7 +90,7 @@ spec_parser = do
       check argument "\"hello\\\"world\"" `shouldBe` Right (Value (JSON.String "hello\"world"))
 
     it "variable placeholder" $
-      check argument "X" `shouldBe` Right (Placeholder (Variable "X"))
+      check argument "X" `shouldBe` Right (Named (Variable "X"))
 
   describe "statement" $ do
     it "cut" $

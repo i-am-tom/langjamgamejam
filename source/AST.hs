@@ -2,6 +2,7 @@
 
 module AST where
 
+import Data.Aeson (FromJSON, FromJSONKey)
 import Data.Aeson qualified as JSON
 import Data.Kind (Type)
 import Data.Text (Text)
@@ -30,13 +31,14 @@ data Fact = Fact
   deriving stock (Show, Eq, Ord)
 
 type Argument :: Type
-data Argument = Value JSON.Value | Placeholder Variable
+data Argument = Value JSON.Value | Named Variable
   deriving stock (Show, Eq, Ord)
 
 type Identifier :: Type
 newtype Identifier = Identifier Text
-  deriving newtype (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
 
 type Variable :: Type
 newtype Variable = Variable Text
-  deriving newtype (Show, Eq, Ord)
+  deriving stock (Show, Eq, Ord)
+  deriving newtype (FromJSON, FromJSONKey)

@@ -6,23 +6,39 @@ build-type: Simple
 library
   hs-source-dirs: source
   default-language: GHC2021
+  ghc-options: -Wunused-packages -Werror -Wall
   exposed-modules:
     AST
     Parser
     Propagator
-  build-depends: aeson, containers, base, parsec, primitive, text
+    Interpreter
+  build-depends:
+    aeson,
+    base,
+    containers,
+    ghc-prim,
+    logict,
+    mtl,
+    parsec,
+    primitive,
+    text
 
 test-suite langjamgamejam-tests
   type: exitcode-stdio-1.0
   default-language: GHC2021
+  ghc-options: -Wunused-packages -Werror -Wall
   hs-source-dirs: tests
   main-is: Driver.hs
-  other-modules: ParserSpec, PropagatorSpec
+  other-modules:
+    InterpreterSpec
+    ParserSpec
+    PropagatorSpec
   build-depends:
     aeson,
     base,
+    directory,
+    filepath,
     ghc-prim,
-    hedgehog,
     hspec,
     langjamgamejam,
     logict,
@@ -30,8 +46,6 @@ test-suite langjamgamejam-tests
     primitive,
     scientific,
     tasty,
-    tasty-hedgehog,
     tasty-hspec,
-    text,
-    transformers,
+    transformers
   build-tool-depends: tasty-discover:tasty-discover

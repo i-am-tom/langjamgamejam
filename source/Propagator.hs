@@ -7,9 +7,9 @@ module Propagator where
 import Control.Applicative (Alternative (..))
 import Control.Monad (MonadPlus, join)
 import Control.Monad.Primitive (PrimMonad (..))
+import Data.Bifunctor (Bifunctor (..), first)
 import Data.Kind (Type)
-import Data.Primitive (writeMutVar)
-import Data.Primitive.MutVar (MutVar, atomicModifyMutVar', modifyMutVar', newMutVar, readMutVar)
+import Data.Primitive.MutVar (MutVar, atomicModifyMutVar', modifyMutVar, newMutVar, readMutVar)
 
 type Cell :: (Type -> Type) -> Type -> Type
 newtype Cell m x = Cell {_cRef :: MutVar (PrimState m) (Maybe x, m ())}
@@ -23,16 +23,23 @@ fresh = do
 with :: (MonadPlus m, PrimMonad m) => Cell m x -> (x -> m ()) -> m ()
 with (Cell ref) f = readMutVar ref >>= \(x, _) -> mapM_ f x
 
-watch :: (MonadPlus m, PrimMonad m) => Cell m x -> (x -> m ()) -> m ()
-watch cell@(Cell ref) k = join $ atomicModifyMutVar' ref \(x, ks) ->
-  ((x, ks *> with cell k), with cell k <|> writeMutVar ref (x, ks) *> empty)
+watch :: forall m x. (MonadPlus m, PrimMonad m) => Cell m x -> (x -> m ()) -> m ()
+watch cell@(Cell ref) k = join $ atomicModifyMutVar' ref \(x, ks) -> do
+  let undo :: m ()
+      undo = modifyMutVar ref (second (const ks)) *> empty
 
-write :: (MonadPlus m, PrimMonad m, Eq x) => Cell m x -> x -> m ()
+  ((x, ks *> with cell k), with cell k <|> undo)
+
+write :: forall m x. (MonadPlus m, PrimMonad m, Eq x) => Cell m x -> x -> m ()
 write (Cell ref) x = join $ atomicModifyMutVar' ref \case
   (Just y, ks)
     | x == y -> ((Just x, ks), pure ())
-    | x /= y -> ((Just x, ks), empty)
-  (Nothing, ks) -> ((Just x, ks), ks <|> writeMutVar ref (Nothing, ks) *> empty)
+    | otherwise -> ((Just y, ks), empty)
+  (Nothing, ks) -> do
+    let undo :: m ()
+        undo = modifyMutVar ref (first (const Nothing)) *> empty
+
+    ((Just x, ks), ks <|> undo)
 
 unify :: (MonadPlus m, PrimMonad m, Eq x) => Cell m x -> Cell m x -> m ()
 unify x y = watch x (write y) *> watch y (write x)

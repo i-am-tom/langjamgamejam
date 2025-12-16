@@ -13,13 +13,13 @@ import Text.Parsec
 
 program :: (Stream s m Char) => ParsecT s u m Program
 program = do
-  _pDefinitions <- many (many newline *> definition)
+  _pDefinitions <- spaced (many definition) <* eof
   pure Program {..}
 
 ---
 
 definition :: (Stream s m Char) => ParsecT s u m Definition
-definition = do
+definition = spaced do
   _dFact <- fact
   _dFrom <- spaced $ asum [string ":-" *> commaSeparated statement, pure []]
   _ <- char '.'
@@ -35,7 +35,7 @@ statement = spaced do
 ---
 
 fact :: (Stream s m Char) => ParsecT s u m Fact
-fact = do
+fact = spaced do
   _fIdentifier <- identifier
   _fArguments <- parenthesised (commaSeparated argument) <|> pure []
 
@@ -44,7 +44,7 @@ fact = do
 ---
 
 argument :: (Stream s m Char) => ParsecT s u m Argument
-argument = asum [fmap Value (json <* spaces), fmap Placeholder variable]
+argument = asum [fmap Value (json <* spaces), fmap Named variable]
   where
     json :: (Stream s m Char) => ParsecT s u m JSON.Value
     json = asum [jsonString, jsonNumber, jsonBoolean]
