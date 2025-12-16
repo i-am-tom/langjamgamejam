@@ -1,10 +1,10 @@
 cabal-version: 3.4
-name: langjamgamejam
+name: ljgj
 version: 0.1.0.0
 build-type: Simple
 
-library
-  hs-source-dirs: source
+library language
+  hs-source-dirs: language
   default-language: GHC2021
   ghc-options: -Wunused-packages -Werror -Wall
   exposed-modules:
@@ -40,7 +40,7 @@ test-suite langjamgamejam-tests
     filepath,
     ghc-prim,
     hspec,
-    langjamgamejam,
+    ljgj:language,
     logict,
     parsec,
     primitive,

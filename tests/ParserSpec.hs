@@ -104,37 +104,49 @@ spec_parser = do
 
   describe "definition" $ do
     it "without from" $
-      check definition "foo." `shouldBe` Right (Definition (Fact (Identifier "foo") []) [])
+      check definition "foo." `shouldBe` Right (Fact (Identifier "foo") [] :- [])
 
     it "fact and arguments" $
-      check definition "foo(123)." `shouldBe` Right (Definition (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0))]) [])
+      check definition "foo(123)." `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0))] :- [])
 
     it "from" $
       check definition "foo :- bar."
-        `shouldBe` Right (Definition (Fact (Identifier "foo") []) [Search (Fact (Identifier "bar") [])])
+        `shouldBe` Right (Fact (Identifier "foo") [] :- [Search (Fact (Identifier "bar") [])])
 
     it "multiple from statements" $
       check definition "foo :- bar, baz."
-        `shouldBe` Right (Definition (Fact (Identifier "foo") []) [Search (Fact (Identifier "bar") []), Search (Fact (Identifier "baz") [])])
+        `shouldBe` Right (Fact (Identifier "foo") [] :- [Search (Fact (Identifier "bar") []), Search (Fact (Identifier "baz") [])])
 
     it "cut in from" $
       check definition "foo :- !, bar."
-        `shouldBe` Right (Definition (Fact (Identifier "foo") []) [Cut, Search (Fact (Identifier "bar") [])])
+        `shouldBe` Right (Fact (Identifier "foo") [] :- [Cut, Search (Fact (Identifier "bar") [])])
 
   describe "program" $ do
     it "empty program" $
       check program "" `shouldBe` Right (Program [])
 
     it "one definition" $
-      check program "foo." `shouldBe` Right (Program [Definition (Fact (Identifier "foo") []) []])
+      check program "foo." `shouldBe` Right (Program [Fact (Identifier "foo") [] :- []])
 
     it "multiple definitions" $
       check program "foo.\nbar."
-        `shouldBe` Right (Program [Definition (Fact (Identifier "foo") []) [], Definition (Fact (Identifier "bar") []) []])
+        `shouldBe` Right (Program [Fact (Identifier "foo") [] :- [], Fact (Identifier "bar") [] :- []])
 
     it "newlines between definitions" $
       check program "foo.\n\nbar."
-        `shouldBe` Right (Program [Definition (Fact (Identifier "foo") []) [], Definition (Fact (Identifier "bar") []) []])
+        `shouldBe` Right (Program [Fact (Identifier "foo") [] :- [], Fact (Identifier "bar") [] :- []])
+
+    it "ignores comments at start" $
+      check program "# This is a comment\nfoo."
+        `shouldBe` Right (Program [Fact (Identifier "foo") [] :- []])
+
+    it "ignores comments between definitions" $
+      check program "foo.\n# A comment\nbar."
+        `shouldBe` Right (Program [Fact (Identifier "foo") [] :- [], Fact (Identifier "bar") [] :- []])
+
+    it "ignores multiple comments" $
+      check program "# Comment 1\nfoo.\n# Comment 2\n# Comment 3\nbar."
+        `shouldBe` Right (Program [Fact (Identifier "foo") [] :- [], Fact (Identifier "bar") [] :- []])
 
 isLeft :: Either a b -> Bool
 isLeft (Left _) = True

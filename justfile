@@ -6,7 +6,7 @@ build:
   cabal build
 
 test:
-  cabal test
+  cabal test --enable-tests
 
 format:
   ormolu -i **/*.hs
@@ -15,7 +15,7 @@ format_check:
   ormolu -c **/*.hs
 
 lint:
-  hlint source tests
+  hlint language tests
 
 clean:
   cabal clean

@@ -103,7 +103,7 @@ type Solution :: Type
 type Solution = Map Variable JSON.Value
 
 definition :: [Ref s] -> Definition -> Interpret s ()
-definition arguments (Definition (Fact _ parameters) statements) = do
+definition arguments (Fact _ parameters :- statements) = do
   guard (length arguments == length parameters)
 
   zipWithM_ withArgument parameters arguments
@@ -132,12 +132,13 @@ withStatement statement ks = do
   case statement of
     Cut -> once ks
     Search fact -> withFact fact *> ks
+    Negation fact -> lnot (withFact fact) *> ks
 
 search :: Identifier -> Interpret s [Definition]
 search name = do
   definitions <- asks _pDefinitions
 
   let matches :: Definition -> Bool
-      matches (Definition (Fact candidate _) _) = candidate == name
+      matches (Fact candidate _ :- _) = candidate == name
 
   pure (filter matches definitions)

@@ -13,24 +13,40 @@ import Text.Parsec
 
 program :: (Stream s m Char) => ParsecT s u m Program
 program = do
-  _pDefinitions <- spaced (many definition) <* eof
+  _pDefinitions <- many do
+    skipMany comment
+    definition
+
+  _ <- eof
   pure Program {..}
+
+comment :: (Stream s m Char) => ParsecT s u m ()
+comment = do
+  _ <- char '#'
+  _ <- many (satisfy (/= '\n'))
+  _ <- optionMaybe (char '\n')
+
+  pure ()
 
 ---
 
 definition :: (Stream s m Char) => ParsecT s u m Definition
 definition = spaced do
-  _dFact <- fact
-  _dFrom <- spaced $ asum [string ":-" *> commaSeparated statement, pure []]
+  this <- fact
+  that <- spaced $ asum [string ":-" *> commaSeparated statement, pure []]
   _ <- char '.'
 
-  pure Definition {..}
+  pure (this :- that)
 
 ---
 
 statement :: (Stream s m Char) => ParsecT s u m Statement
 statement = spaced do
-  asum [char '!' $> Cut, fmap Search fact]
+  asum
+    [ char '!' $> Cut,
+      string "\\+" *> fmap Negation fact,
+      fmap Search fact
+    ]
 
 ---
 
