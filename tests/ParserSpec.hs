@@ -3,8 +3,6 @@
 module ParserSpec where
 
 import AST
-import Data.Aeson qualified as JSON
-import Data.Scientific (scientific)
 import Parser
 import Test.Hspec
 import Text.Parsec
@@ -60,34 +58,25 @@ spec_parser = do
       check fact "foo()" `shouldBe` Right (Fact (Identifier "foo") [])
 
     it "one argument" $
-      check fact "foo(123)" `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0))])
+      check fact "foo(\"bar\")" `shouldBe` Right (Fact (Identifier "foo") [Value "bar"])
 
     it "multiple arguments" $
-      check fact "foo(123, true, \"bar\")"
-        `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0)), Value (JSON.Bool True), Value (JSON.String "bar")])
+      check fact "foo(\"bar\", \"baz\")"
+        `shouldBe` Right (Fact (Identifier "foo") [Value "bar", Value "baz"])
 
     it "variable placeholder" $
       check fact "foo(X)" `shouldBe` Right (Fact (Identifier "foo") [Named (Variable "X")])
 
     it "mixed arguments" $
-      check fact "foo(123, X, \"bar\")"
-        `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0)), Named (Variable "X"), Value (JSON.String "bar")])
+      check fact "foo(X, \"bar\")"
+        `shouldBe` Right (Fact (Identifier "foo") [Named (Variable "X"), Value "bar"])
 
   describe "argument" $ do
-    it "JSON number" $
-      check argument "123" `shouldBe` Right (Value (JSON.Number (scientific 123 0)))
+    it "string" $
+      check argument "\"hello\"" `shouldBe` Right (Value "hello")
 
-    it "JSON boolean true" $
-      check argument "true" `shouldBe` Right (Value (JSON.Bool True))
-
-    it "JSON boolean false" $
-      check argument "false" `shouldBe` Right (Value (JSON.Bool False))
-
-    it "JSON string" $
-      check argument "\"hello\"" `shouldBe` Right (Value (JSON.String "hello"))
-
-    it "JSON string with escaped quotes" $
-      check argument "\"hello\\\"world\"" `shouldBe` Right (Value (JSON.String "hello\"world"))
+    it "string with escaped quotes" $
+      check argument "\"hello\\\"world\"" `shouldBe` Right (Value "hello\"world")
 
     it "variable placeholder" $
       check argument "X" `shouldBe` Right (Named (Variable "X"))
@@ -97,7 +86,7 @@ spec_parser = do
       check statement "!" `shouldBe` Right Cut
 
     it "with fact" $
-      check statement "foo(123)" `shouldBe` Right (Search (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0))]))
+      check statement "foo(\"abc\")" `shouldBe` Right (Search (Fact (Identifier "foo") [Value "abc"]))
 
     it "without arguments" $
       check statement "foo" `shouldBe` Right (Search (Fact (Identifier "foo") []))
@@ -107,7 +96,7 @@ spec_parser = do
       check definition "foo." `shouldBe` Right (Fact (Identifier "foo") [] :- [])
 
     it "fact and arguments" $
-      check definition "foo(123)." `shouldBe` Right (Fact (Identifier "foo") [Value (JSON.Number (scientific 123 0))] :- [])
+      check definition "foo(\"abc\")." `shouldBe` Right (Fact (Identifier "foo") [Value "abc"] :- [])
 
     it "from" $
       check definition "foo :- bar."

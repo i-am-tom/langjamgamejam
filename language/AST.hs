@@ -4,9 +4,8 @@
 module AST where
 
 import Data.Aeson (FromJSON, FromJSONKey)
-import Data.Aeson qualified as JSON
 import Data.Kind (Type)
-import Data.String (IsString)
+import Data.String (IsString (..))
 import Data.Text (Text)
 import GHC.Exts (IsList)
 
@@ -31,15 +30,15 @@ data Fact = Fact
   deriving stock (Show, Eq, Ord)
 
 type Argument :: Type
-data Argument = Value JSON.Value | Named Variable
+data Argument = Value Text | Named Variable
   deriving stock (Show, Eq, Ord)
 
 type Identifier :: Type
-newtype Identifier = Identifier Text
+newtype Identifier = Identifier {unIdentifier :: Text}
   deriving stock (Show, Eq, Ord)
   deriving newtype (IsString)
 
 type Variable :: Type
-newtype Variable = Variable Text
+newtype Variable = Variable {unVariable :: Text}
   deriving stock (Show, Eq, Ord)
   deriving newtype (FromJSON, FromJSONKey, IsString)

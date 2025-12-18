@@ -16,12 +16,12 @@ import Control.Monad.Primitive (PrimMonad (..))
 import Control.Monad.Reader
 import Control.Monad.ST (ST, runST)
 import Control.Monad.State (MonadState (..), gets, modify, state)
-import Data.Aeson qualified as JSON
 import Data.Kind (Type)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Monoid (Ap (Ap))
 import Data.Primitive.MutVar (MutVar, atomicModifyMutVar', newMutVar)
+import Data.Text (Text)
 import Data.Traversable (for)
 import Data.Tuple (swap)
 import GHC.Prim
@@ -97,10 +97,10 @@ register name cell = do
     Nothing -> modify (Map.insert name cell)
 
 type Ref :: Type -> Type
-type Ref s = Cell (Interpret s) JSON.Value
+type Ref s = Cell (Interpret s) Text
 
 type Solution :: Type
-type Solution = Map Variable JSON.Value
+type Solution = Map Variable Text
 
 definition :: [Ref s] -> Definition -> Interpret s ()
 definition arguments (Fact _ parameters :- statements) = do

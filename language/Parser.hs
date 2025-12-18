@@ -5,7 +5,6 @@ module Parser where
 
 import AST
 import Control.Applicative (asum)
-import Data.Aeson qualified as JSON
 import Data.Functor (($>))
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -60,25 +59,10 @@ fact = spaced do
 ---
 
 argument :: (Stream s m Char) => ParsecT s u m Argument
-argument = asum [fmap Value (json <* spaces), fmap Named variable]
+argument = asum [fmap Value (text <* spaces), fmap Named variable]
   where
-    json :: (Stream s m Char) => ParsecT s u m JSON.Value
-    json = asum [jsonString, jsonNumber, jsonBoolean]
-
-    jsonBoolean :: (Stream s m Char) => ParsecT s u m JSON.Value
-    jsonBoolean =
-      JSON.Bool
-        <$> asum
-          [ string "true" $> True,
-            string "false" $> False
-          ]
-
-    jsonNumber :: (Stream s m Char) => ParsecT s u m JSON.Value
-    jsonNumber = fmap (JSON.Number . read) (many1 digit)
-
-    jsonString :: (Stream s m Char) => ParsecT s u m JSON.Value
-    jsonString = fmap (JSON.String . Text.pack) do
-      between (char '"') (char '"') (many stringChar)
+    text :: (Stream s m Char) => ParsecT s u m Text
+    text = fmap Text.pack (between (char '"') (char '"') (many stringChar))
 
     stringChar :: (Stream s m Char) => ParsecT s u m Char
     stringChar = (char '\\' *> char '"') <|> satisfy (/= '"')

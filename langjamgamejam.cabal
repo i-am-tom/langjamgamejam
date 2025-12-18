@@ -23,7 +23,38 @@ library language
     primitive,
     text
 
-test-suite langjamgamejam-tests
+library game
+  hs-source-dirs: game
+  default-language: GHC2021
+  ghc-options: -Wunused-packages -Werror -Wall
+  exposed-modules:
+    Event
+    Game
+    Program
+    Render
+    State
+  build-depends:
+    base,
+    brick,
+    containers,
+    filepath,
+    lens,
+    ljgj:language,
+    mtl,
+    parsec,
+    text,
+    vty
+
+executable binary
+  main-is: Main.hs
+  hs-source-dirs: binary
+  default-language: GHC2021
+  ghc-options: -Wunused-packages -Werror -Wall -threaded
+  build-depends:
+    base,
+    ljgj:game
+
+test-suite tests
   type: exitcode-stdio-1.0
   default-language: GHC2021
   ghc-options: -Wunused-packages -Werror -Wall
@@ -44,7 +75,6 @@ test-suite langjamgamejam-tests
     logict,
     parsec,
     primitive,
-    scientific,
     tasty,
     tasty-hspec,
     transformers
